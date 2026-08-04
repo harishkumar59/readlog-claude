@@ -435,146 +435,103 @@
     state.lastSentenceEl = null;
   }
 
-  function speakFrom(sentenceIndex){
-    state.playToken++;
-    const myToken = state.playToken;
-    state.sentenceIndex = sentenceIndex;
-    if (voices.length === 0) loadVoices();
+  // Detect mobile once at startup
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-    speechSynthesis.cancel();
-    state.currentUtterance = null;
-    state.utteranceQueue = [];
+  // ---------- Mobile-first speech engine ----------
+  // Strategy: speak ONE sentence at a time, chain via onend.
+  // This is the ONLY approach that works reliably on both
+  // Android Chrome and iOS Safari mobile browsers.
 
-    if (sentenceIndex < 0 || sentenceIndex >= state.sentenceList.length) return;
-
-    // Build unified section text & offset map starting from sentenceIndex
-    const remainingSentences = state.sentenceList.slice(sentenceIndex);
-    let fullText = "";
-    const offsets = [];
-
-    remainingSentences.forEach((item, relIdx) => {
-      if (relIdx > 0) fullText += " ";
-      const start = fullText.length;
-      fullText += item.text;
-      const end = fullText.length;
-      offsets.push({
-        globalIndex: sentenceIndex + relIdx,
-        entry: item,
-        start,
-        end
-      });
-    });
-
-    if (!fullText.trim()) return;
-
-    // Single Utterance for Mobile Android & iOS Web Speech API compatibility
-    const utter = new SpeechSynthesisUtterance(fullText);
-    state.currentUtterance = utter;
-
-    const vIdx = voiceSelect.value;
-    const selectedVoice = (vIdx !== "" && voices[vIdx]) ? voices[vIdx] : null;
-    if (selectedVoice) utter.voice = selectedVoice;
-    utter.rate = parseFloat(rateSlider.value) || 1.0;
-
-    let boundaryFired = false;
-    let iosTimer = null;
-
-    utter.onboundary = (e) => {
-      boundaryFired = true;
-      if (iosTimer) { clearInterval(iosTimer); iosTimer = null; }
-      if (myToken !== state.playToken) return;
-      if (e.name && e.name !== "word") return;
-
-      const ci = e.charIndex;
-      const matchedOffset = offsets.find(o => ci >= o.start && ci <= o.end) || offsets[0];
-      if (matchedOffset) {
-        state.sentenceIndex = matchedOffset.globalIndex;
-        const entry = matchedOffset.entry;
-
-        // Highlight full sentence container if not already active
-        if (state.lastSentenceEl !== entry.el) {
-          if (state.lastSentenceEl) state.lastSentenceEl.classList.remove("active");
-          entry.el.classList.add("active");
-          state.lastSentenceEl = entry.el;
-          entry.el.scrollIntoView({ block: "center", behavior: "smooth" });
-        }
-
-        // Highlight current word over sentence container
-        const relIndex = ci - matchedOffset.start;
-        let targetWord = null;
-        for (const w of entry.words) {
-          if (relIndex >= w.start && relIndex < w.end) { targetWord = w; break; }
-        }
-        if (!targetWord) {
-          for (const w of entry.words) { if (w.start >= relIndex) { targetWord = w; break; } }
-        }
-        if (targetWord && targetWord.el && state.lastWordEl !== targetWord.el) {
-          if (state.lastWordEl) state.lastWordEl.classList.remove("current");
-          targetWord.el.classList.add("current");
-          state.lastWordEl = targetWord.el;
-        }
-      }
-    };
-
-    // iOS Safari fallback timer if onboundary doesn't fire
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isIOS) {
-      let sOffsetIdx = 0;
-      let wOffsetIdx = 0;
-      const estCharMs = (60 / (180 * utter.rate)) * 1000;
-      const stepMs = Math.max(120, (fullText.length * estCharMs) / (offsets.length * 5 || 1));
-      iosTimer = setInterval(() => {
-        if (boundaryFired || myToken !== state.playToken) {
-          clearInterval(iosTimer);
-          return;
-        }
-        const matchedOffset = offsets[sOffsetIdx];
-        if (matchedOffset) {
-          state.sentenceIndex = matchedOffset.globalIndex;
-          const entry = matchedOffset.entry;
-          if (state.lastSentenceEl !== entry.el) {
-            if (state.lastSentenceEl) state.lastSentenceEl.classList.remove("active");
-            entry.el.classList.add("active");
-            state.lastSentenceEl = entry.el;
-            entry.el.scrollIntoView({ block: "center", behavior: "smooth" });
-            wOffsetIdx = 0;
-          }
-          if (wOffsetIdx < entry.words.length) {
-            const targetWord = entry.words[wOffsetIdx++];
-            if (targetWord && targetWord.el && state.lastWordEl !== targetWord.el) {
-              if (state.lastWordEl) state.lastWordEl.classList.remove("current");
-              targetWord.el.classList.add("current");
-              state.lastWordEl = targetWord.el;
-            }
-          } else {
-            sOffsetIdx++;
-            wOffsetIdx = 0;
-          }
-        } else {
-          clearInterval(iosTimer);
-        }
-      }, stepMs);
-    }
-
-    utter.onend = () => {
-      if (iosTimer) clearInterval(iosTimer);
-      if (myToken !== state.playToken) return;
+  function speakSentence(idx, myToken) {
+    if (myToken !== state.playToken) return;
+    if (idx >= state.sentenceList.length) {
+      // Section finished
       if (autoAdvance.checked && state.sectionIndex < state.sections.length - 1) {
         loadSection(state.sectionIndex + 1);
-        if (myToken === state.playToken) speakFrom(0);
+        speakSentence(0, myToken);
       } else {
         stopSpeaking();
       }
+      return;
+    }
+
+    state.sentenceIndex = idx;
+    const entry = state.sentenceList[idx];
+
+    // Highlight sentence container
+    if (state.lastSentenceEl !== entry.el) {
+      if (state.lastSentenceEl) state.lastSentenceEl.classList.remove("active");
+      if (state.lastWordEl) state.lastWordEl.classList.remove("current");
+      state.lastWordEl = null;
+      entry.el.classList.add("active");
+      state.lastSentenceEl = entry.el;
+      entry.el.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+
+    const utter = new SpeechSynthesisUtterance(entry.text);
+    state.currentUtterance = utter; // prevent GC on mobile
+
+    const vIdx = voiceSelect.value;
+    if (vIdx !== "" && voices[vIdx]) utter.voice = voices[vIdx];
+    utter.rate = parseFloat(rateSlider.value) || 1.0;
+
+    // Word-level highlighting via onboundary
+    utter.onboundary = (e) => {
+      if (myToken !== state.playToken) return;
+      if (e.name && e.name !== "word") return;
+      const ci = e.charIndex;
+      let target = null;
+      for (const w of entry.words) {
+        if (ci >= w.start && ci < w.end) { target = w; break; }
+      }
+      if (!target) {
+        for (const w of entry.words) { if (w.start >= ci) { target = w; break; } }
+      }
+      if (target && target.el && state.lastWordEl !== target.el) {
+        if (state.lastWordEl) state.lastWordEl.classList.remove("current");
+        target.el.classList.add("current");
+        state.lastWordEl = target.el;
+      }
+    };
+
+    utter.onend = () => {
+      if (myToken !== state.playToken) return;
+      // Chain to next sentence — this works from onend on both Android & iOS
+      speakSentence(idx + 1, myToken);
     };
 
     utter.onerror = (e) => {
-      console.warn("Utterance error:", e);
-      if (iosTimer) clearInterval(iosTimer);
+      // On Android, 'interrupted' errors fire when we cancel — ignore those
+      if (e && e.error === "interrupted") return;
       if (myToken !== state.playToken) return;
-      stopSpeaking();
+      console.warn("TTS error on sentence", idx, e && e.error);
+      // Try to continue to next sentence on non-fatal errors
+      speakSentence(idx + 1, myToken);
     };
 
     speechSynthesis.speak(utter);
+  }
+
+  function speakFrom(sentenceIndex) {
+    // Cancel any in-progress speech first
+    speechSynthesis.cancel();
+    state.currentUtterance = null;
+
+    if (sentenceIndex < 0 || sentenceIndex >= state.sentenceList.length) return;
+    if (voices.length === 0) loadVoices();
+
+    // Use the CURRENT playToken — do NOT increment here.
+    // togglePlay() already set the token before calling us.
+    const myToken = state.playToken;
+
+    // On Android, cancel() needs a moment to fully release the TTS engine.
+    // Without this delay, the next speak() call gets silently swallowed.
+    if (isMobile) {
+      setTimeout(() => speakSentence(sentenceIndex, myToken), 100);
+    } else {
+      speakSentence(sentenceIndex, myToken);
+    }
   }
 
   function togglePlay(){
@@ -583,7 +540,7 @@
       stopSpeaking(true);
     } else {
       state.isPlaying = true;
-      state.playToken++;
+      state.playToken++;  // Only ONE increment per play session
       playIcon.style.display = "none";
       pauseIcon.style.display = "block";
       startKeepAlive();
@@ -594,7 +551,6 @@
     state.isPlaying = false;
     state.playToken++;
     state.currentUtterance = null;
-    state.utteranceQueue = [];
     speechSynthesis.cancel();
     stopKeepAlive();
     playIcon.style.display = "block";
@@ -606,17 +562,17 @@
   }
   function startKeepAlive(){
     stopKeepAlive();
-    // Do NOT run pause/resume keep-alive on iOS because calling pause() on iOS Safari cancels TTS
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isIOS) return;
+    // DISABLE keep-alive on ALL mobile browsers.
+    // pause()/resume() kills TTS on Android Chrome AND iOS Safari.
+    if (isMobile) return;
 
-    // Chrome bug workaround: speechSynthesis silently halts long sessions
+    // Desktop Chrome bug workaround: speechSynthesis silently halts after ~15s
     state.keepAliveTimer = setInterval(() => {
       if (speechSynthesis.speaking && !speechSynthesis.paused){
         speechSynthesis.pause();
         speechSynthesis.resume();
       }
-    }, 4000);
+    }, 5000);
   }
   function stopKeepAlive(){
     if (state.keepAliveTimer) clearInterval(state.keepAliveTimer);
@@ -639,10 +595,10 @@
   });
 
   voiceSelect.addEventListener("change", () => {
-    if (state.isPlaying) speakFrom(state.sentenceIndex);
+    if (state.isPlaying) { state.playToken++; speakFrom(state.sentenceIndex); }
   });
   rateSlider.addEventListener("change", () => {
-    if (state.isPlaying) speakFrom(state.sentenceIndex);
+    if (state.isPlaying) { state.playToken++; speakFrom(state.sentenceIndex); }
   });
   rateSlider.addEventListener("input", () => {
     rateLabel.textContent = parseFloat(rateSlider.value).toFixed(1) + "×";
