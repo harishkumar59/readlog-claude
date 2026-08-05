@@ -16,6 +16,7 @@
     Readalong
   </div>
   <button class="btn" id="tocToggleBtn" title="Open Book Index">📖 Book Index</button>
+  <button class="btn" id="viewToggleBtn" title="Switch view" style="display:none;">📄 PDF View</button>
   <button class="btn" id="darkModeBtn" title="Toggle dark mode">🌙 Dark</button>
   <div id="bookMeta">No book loaded</div>
   <input type="file" id="fileInput" accept=".pdf,.epub">
@@ -39,6 +40,9 @@
     </div>
     <div id="loadingState" style="display:none;">Opening your book…</div>
     <div id="reader" style="display:none;"></div>
+    <div id="pdfViewer" style="display:none;">
+      <canvas id="pdfCanvas"></canvas>
+    </div>
   </div>
 </div>
 
@@ -118,6 +122,10 @@
       <input type="checkbox" id="autoAdvanceMobile" checked style="accent-color:var(--brass);width:18px;height:18px;">
       <span class="mobileSettingsLabel" style="margin:0;">Auto-continue to next page</span>
     </label>
+  </div>
+  <div class="mobileSettingsRow" id="mobileViewToggleRow" style="display:none;">
+    <span class="mobileSettingsLabel">📄 View Mode</span>
+    <button class="btn" id="viewToggleMobile" style="font-size:12px;padding:6px 12px;">PDF View</button>
   </div>
 </div>
 

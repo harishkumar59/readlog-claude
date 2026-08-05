@@ -16,7 +16,10 @@
     bookTitle: "",
     keepAliveTimer: null,
     currentUtterance: null,
-    utteranceQueue: []    // Store active utterances to prevent mobile GC & ensure continuous playback
+    utteranceQueue: [],   // Store active utterances to prevent mobile GC & ensure continuous playback
+    pdfDoc: null,         // pdf.js document reference for rendering pages
+    isPdf: false,         // true when the loaded file is a PDF
+    viewMode: 'text'      // 'text' = extracted text (TTS highlight), 'pdf' = original page render
   };
 
   // ---------------- DOM refs ----------------
@@ -54,6 +57,9 @@
   const fontPlus = $("fontPlus");
   const fontMinus = $("fontMinus");
   const autoAdvance = $("autoAdvance");
+  const viewToggleBtn = $("viewToggleBtn");
+  const pdfViewer = $("pdfViewer");
+  const pdfCanvas = $("pdfCanvas");
 
   // ---------------- File open plumbing ----------------
   openBtn.addEventListener("click", () => fileInput.click());
@@ -88,8 +94,11 @@
       let result;
       if (name.endsWith(".pdf")) {
         result = await parsePdf(file);
+        state.isPdf = true;
       } else if (name.endsWith(".epub")) {
         result = await parseEpub(file);
+        state.isPdf = false;
+        state.pdfDoc = null;
       } else {
         throw new Error("Please choose a .pdf or .epub file.");
       }
@@ -99,7 +108,17 @@
       buildToc();
       loadingState.style.display = "none";
       readerEl.style.display = "block";
+      pdfViewer.style.display = "none";
       controls.classList.remove("disabled");
+      // Show/hide view toggle button (only for PDFs)
+      state.viewMode = 'text';
+      if (state.isPdf) {
+        viewToggleBtn.style.display = '';
+        viewToggleBtn.innerHTML = '📄 PDF View';
+        viewToggleBtn.classList.remove('active');
+      } else {
+        viewToggleBtn.style.display = 'none';
+      }
       loadSection(0);
     } catch(err){
       console.error(err);
@@ -146,6 +165,7 @@
       const meta = await pdf.getMetadata();
       if (meta && meta.info && meta.info.Title) title = meta.info.Title;
     }catch(e){}
+    state.pdfDoc = pdf; // Store for later page rendering
     return { title, sections };
   }
 
@@ -385,6 +405,11 @@
     prevBtn.disabled = i === 0;
     nextBtn.disabled = i === state.sections.length - 1;
     readerWrap.scrollTop = 0;
+
+    // If in PDF view mode, render the original page
+    if (state.viewMode === 'pdf' && state.isPdf && state.pdfDoc) {
+      renderPdfPage(i + 1); // pdf.js pages are 1-indexed
+    }
   }
 
   function seekTo(sentenceIndex){
@@ -680,6 +705,51 @@
     });
   });
 
+  // ---------- PDF original-page rendering ----------
+  async function renderPdfPage(pageNum) {
+    if (!state.pdfDoc || pageNum < 1 || pageNum > state.pdfDoc.numPages) return;
+    try {
+      const page = await state.pdfDoc.getPage(pageNum);
+      const scale = window.devicePixelRatio >= 2 ? 2 : 1.5;
+      const viewport = page.getViewport({ scale });
+
+      pdfCanvas.width = viewport.width;
+      pdfCanvas.height = viewport.height;
+
+      const ctx = pdfCanvas.getContext('2d');
+      ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    } catch (err) {
+      console.warn('PDF page render error:', err);
+    }
+  }
+
+  function setViewMode(mode) {
+    state.viewMode = mode;
+    if (mode === 'pdf') {
+      readerEl.style.display = 'none';
+      pdfViewer.style.display = 'flex';
+      viewToggleBtn.innerHTML = '📝 Text View';
+      viewToggleBtn.classList.add('active');
+      // Render current page
+      if (state.pdfDoc) {
+        renderPdfPage(state.sectionIndex + 1);
+      }
+    } else {
+      readerEl.style.display = 'block';
+      pdfViewer.style.display = 'none';
+      viewToggleBtn.innerHTML = '📄 PDF View';
+      viewToggleBtn.classList.remove('active');
+    }
+    readerWrap.scrollTop = 0;
+  }
+
+  if (viewToggleBtn) {
+    viewToggleBtn.addEventListener('click', () => {
+      setViewMode(state.viewMode === 'text' ? 'pdf' : 'text');
+    });
+  }
+
   // keyboard shortcut: space to play/pause when not typing in a field
   document.addEventListener("keydown", (e) => {
     if (e.code === "Space" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "SELECT"){
@@ -750,4 +820,29 @@
     mobileSettingsDrawer.classList.add('hidden');
     if (mobileSettingsBtn) mobileSettingsBtn.classList.remove('active');
   });
+
+  // ---------- Mobile view toggle ----------
+  const viewToggleMobile = document.getElementById('viewToggleMobile');
+  const mobileViewToggleRow = document.getElementById('mobileViewToggleRow');
+
+  if (viewToggleMobile) {
+    viewToggleMobile.addEventListener('click', () => {
+      setViewMode(state.viewMode === 'text' ? 'pdf' : 'text');
+      // Update mobile button text
+      viewToggleMobile.textContent = state.viewMode === 'pdf' ? '📝 Text View' : '📄 PDF View';
+    });
+  }
+
+  // Watch for viewToggleBtn display changes to sync mobile row visibility
+  const viewObserver = new MutationObserver(() => {
+    if (mobileViewToggleRow) {
+      mobileViewToggleRow.style.display = viewToggleBtn.style.display === 'none' ? 'none' : 'flex';
+    }
+    if (viewToggleMobile) {
+      viewToggleMobile.textContent = state.viewMode === 'pdf' ? '📝 Text View' : '📄 PDF View';
+    }
+  });
+  if (viewToggleBtn) {
+    viewObserver.observe(viewToggleBtn, { attributes: true, attributeFilter: ['style'] });
+  }
 })();
