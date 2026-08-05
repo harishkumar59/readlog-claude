@@ -61,7 +61,7 @@
 
   <div id="sectionLabel" class="clickable" title="Click to view Book Index">—</div>
 
-  <div class="ctrlGroup hideSmall">
+  <div class="ctrlGroup desktopOnly">
     <span>Voice</span>
     <select id="voiceSelect"></select>
   </div>
@@ -74,7 +74,7 @@
     <span id="rateLabel">1.0×</span>
   </div>
 
-  <div class="ctrlGroup hideSmall">
+  <div class="ctrlGroup desktopOnly">
     <span>Aa</span>
     <button class="iconBtn" id="fontMinus" title="Smaller text">−</button>
     <button class="iconBtn" id="fontPlus" title="Larger text">+</button>
@@ -89,10 +89,36 @@
   </div>
 
   <div id="spacer"></div>
-  <label class="ctrlGroup hideSmall" style="cursor:pointer;">
+  <label class="ctrlGroup desktopOnly" style="cursor:pointer;">
     <input type="checkbox" id="autoAdvance" checked style="accent-color:var(--brass);">
     Auto-continue
   </label>
+
+  <!-- Mobile settings toggle button -->
+  <button class="iconBtn mobileOnly" id="mobileSettingsBtn" title="Settings">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+  </button>
+</div>
+
+<!-- Mobile settings drawer -->
+<div id="mobileSettingsDrawer" class="mobileOnly hidden">
+  <div class="mobileSettingsRow">
+    <span class="mobileSettingsLabel">🎙️ Voice</span>
+    <select id="voiceSelectMobile"></select>
+  </div>
+  <div class="mobileSettingsRow">
+    <span class="mobileSettingsLabel">Aa Font Size</span>
+    <div class="mobileSettingsBtnGroup">
+      <button class="iconBtn" id="fontMinusMobile" title="Smaller text">−</button>
+      <button class="iconBtn" id="fontPlusMobile" title="Larger text">+</button>
+    </div>
+  </div>
+  <div class="mobileSettingsRow">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+      <input type="checkbox" id="autoAdvanceMobile" checked style="accent-color:var(--brass);width:18px;height:18px;">
+      <span class="mobileSettingsLabel" style="margin:0;">Auto-continue to next page</span>
+    </label>
+  </div>
 </div>
 
 <div id="indexModal" class="modalBackdrop hidden">

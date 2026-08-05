@@ -483,9 +483,15 @@ input[type=range]{ width:80px; }
   #bookMeta { display: none; }
 }
 
+/* Desktop-only items (hidden on mobile) */
+.mobileOnly { display: none !important; }
+
 @media (max-width: 600px){
-  .hideSmall {
+  .desktopOnly {
     display: none !important;
+  }
+  .mobileOnly {
+    display: flex !important;
   }
   :root {
     --reader-font-size: 18px;
@@ -507,7 +513,7 @@ input[type=range]{ width:80px; }
     border-radius: 6px;
   }
   #readerWrap {
-    padding: 20px 14px 110px;
+    padding: 20px 14px 130px;
   }
   #reader h1.chapterTitle {
     font-size: 1.3em;
@@ -533,18 +539,19 @@ input[type=range]{ width:80px; }
   #controls {
     padding: 8px 12px;
     gap: 8px 10px;
-    justify-content: space-between;
+    justify-content: center;
+    flex-wrap: nowrap;
   }
   .transport {
     gap: 6px;
   }
   #playBtn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
   }
   .iconBtn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
   }
   #sectionLabel {
     font-size: 11px;
@@ -569,5 +576,71 @@ input[type=range]{ width:80px; }
   .swatch {
     width: 22px;
     height: 22px;
+  }
+
+  /* Mobile settings drawer */
+  #mobileSettingsDrawer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 19;
+    background: var(--chrome);
+    border-top: 1px solid #333d56;
+    padding: 14px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transform: translateY(0);
+    transition: transform .25s cubic-bezier(.4,.0,.2,1), opacity .2s ease;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.35);
+    border-radius: 16px 16px 0 0;
+  }
+  #mobileSettingsDrawer.hidden {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .mobileSettingsRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .mobileSettingsLabel {
+    font-size: 13.5px;
+    color: #c3c9d8;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .mobileSettingsBtnGroup {
+    display: flex;
+    gap: 6px;
+  }
+  #mobileSettingsDrawer select {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    background: var(--chrome-2);
+    color: #e9e6df;
+    border: 1px solid #333d56;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: var(--font-ui);
+  }
+  /* Push the controls bar up when drawer is open */
+  #controls {
+    transition: transform .25s cubic-bezier(.4,.0,.2,1);
+  }
+  #mobileSettingsDrawer:not(.hidden) ~ #controls,
+  body:has(#mobileSettingsDrawer:not(.hidden)) #controls {
+    /* controls stay on top of drawer */
+  }
+  /* Gear button active state */
+  #mobileSettingsBtn.active {
+    background: var(--brass);
+    color: #1c1408;
+    border-color: var(--brass);
   }
 }

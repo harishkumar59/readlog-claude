@@ -424,6 +424,8 @@
     if (preferred === -1) preferred = 0;
     if (current && voices[current]) voiceSelect.value = current;
     else voiceSelect.value = preferred;
+    // Sync mobile voice selector
+    syncMobileVoices();
   }
   speechSynthesis.onvoiceschanged = loadVoices;
   loadVoices();
@@ -443,13 +445,27 @@
   // This is the ONLY approach that works reliably on both
   // Android Chrome and iOS Safari mobile browsers.
 
+  function isAutoAdvanceEnabled() {
+    const mobileCheckbox = document.getElementById('autoAdvanceMobile');
+    const desktopCheckbox = autoAdvance;
+    // On mobile the desktop checkbox is hidden, so check both
+    if (mobileCheckbox && mobileCheckbox.offsetParent !== null) return mobileCheckbox.checked;
+    return desktopCheckbox.checked;
+  }
+
   function speakSentence(idx, myToken) {
     if (myToken !== state.playToken) return;
     if (idx >= state.sentenceList.length) {
-      // Section finished
-      if (autoAdvance.checked && state.sectionIndex < state.sections.length - 1) {
+      // Section finished — auto-advance to next page/chapter
+      if (isAutoAdvanceEnabled() && state.sectionIndex < state.sections.length - 1) {
         loadSection(state.sectionIndex + 1);
-        speakSentence(0, myToken);
+        // loadSection increments playToken, so we must use the NEW token
+        const newToken = state.playToken;
+        if (isMobile) {
+          setTimeout(() => speakSentence(0, newToken), 150);
+        } else {
+          speakSentence(0, newToken);
+        }
       } else {
         stopSpeaking();
       }
@@ -675,4 +691,63 @@
   });
 
   window.addEventListener("beforeunload", () => speechSynthesis.cancel());
+
+  // ---------- Mobile settings drawer ----------
+  const mobileSettingsBtn = document.getElementById('mobileSettingsBtn');
+  const mobileSettingsDrawer = document.getElementById('mobileSettingsDrawer');
+  const voiceSelectMobile = document.getElementById('voiceSelectMobile');
+  const fontPlusMobile = document.getElementById('fontPlusMobile');
+  const fontMinusMobile = document.getElementById('fontMinusMobile');
+  const autoAdvanceMobile = document.getElementById('autoAdvanceMobile');
+
+  if (mobileSettingsBtn && mobileSettingsDrawer) {
+    mobileSettingsBtn.addEventListener('click', () => {
+      const isHidden = mobileSettingsDrawer.classList.contains('hidden');
+      mobileSettingsDrawer.classList.toggle('hidden', !isHidden);
+      mobileSettingsBtn.classList.toggle('active', isHidden);
+    });
+  }
+
+  // Populate mobile voice select (mirrors desktop)
+  function syncMobileVoices() {
+    if (!voiceSelectMobile) return;
+    voiceSelectMobile.innerHTML = voiceSelect.innerHTML;
+    voiceSelectMobile.value = voiceSelect.value;
+  }
+  // Sync once in case voices already loaded
+  syncMobileVoices();
+
+  // Keep both voice selects in sync
+  if (voiceSelectMobile) {
+    voiceSelectMobile.addEventListener('change', () => {
+      voiceSelect.value = voiceSelectMobile.value;
+      voiceSelect.dispatchEvent(new Event('change'));
+    });
+  }
+  voiceSelect.addEventListener('change', () => {
+    if (voiceSelectMobile) voiceSelectMobile.value = voiceSelect.value;
+  });
+
+  // Keep both auto-advance checkboxes in sync
+  if (autoAdvanceMobile) {
+    autoAdvanceMobile.addEventListener('change', () => {
+      autoAdvance.checked = autoAdvanceMobile.checked;
+    });
+    autoAdvance.addEventListener('change', () => {
+      autoAdvanceMobile.checked = autoAdvance.checked;
+    });
+  }
+
+  // Mobile font size controls
+  if (fontPlusMobile) fontPlusMobile.addEventListener('click', () => adjustFont(1));
+  if (fontMinusMobile) fontMinusMobile.addEventListener('click', () => adjustFont(-1));
+
+  // Close drawer when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (!mobileSettingsDrawer || mobileSettingsDrawer.classList.contains('hidden')) return;
+    if (mobileSettingsDrawer.contains(e.target)) return;
+    if (mobileSettingsBtn && mobileSettingsBtn.contains(e.target)) return;
+    mobileSettingsDrawer.classList.add('hidden');
+    if (mobileSettingsBtn) mobileSettingsBtn.classList.remove('active');
+  });
 })();
