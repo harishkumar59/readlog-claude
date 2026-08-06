@@ -88,8 +88,9 @@
     const name = file.name.toLowerCase();
     emptyState.style.display = "none";
     readerEl.style.display = "none";
-    loadingState.style.display = "block";
-    loadingState.textContent = "Opening your book…";
+    loadingState.style.display = "flex";
+    const loadingText = loadingState.querySelector('.loadingText');
+    if (loadingText) loadingText.textContent = "Opening your book…";
     try{
       let result;
       if (name.endsWith(".pdf")) {
@@ -140,7 +141,8 @@
     const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     const sections = [];
     for (let i = 1; i <= pdf.numPages; i++){
-      loadingState.textContent = "Reading page " + i + " of " + pdf.numPages + "…";
+      const lt = loadingState.querySelector('.loadingText');
+      if (lt) lt.textContent = "Reading page " + i + " of " + pdf.numPages + "…";
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
       let text = "";
@@ -217,7 +219,8 @@
       const zf = zip.file(path);
       if (!zf) continue;
       idx++;
-      loadingState.textContent = "Reading chapter " + idx + " of " + spineIds.length + "…";
+      const lt = loadingState.querySelector('.loadingText');
+      if (lt) lt.textContent = "Reading chapter " + idx + " of " + spineIds.length + "…";
       const html = await zf.async("text");
       const parsed = htmlToChapter(html, idx);
       if (parsed.text.trim().length === 0) continue;
@@ -666,14 +669,14 @@
   function setDarkMode(isDark){
     if (isDark){
       document.body.classList.add("dark-theme");
-      darkModeBtn.innerHTML = "☀️ Light";
+      darkModeBtn.innerHTML = "☀️";
       if (readerWrap.classList.contains("theme-paper")) {
         setReaderTheme("night");
       }
       localStorage.setItem("readalong_darkmode", "true");
     } else {
       document.body.classList.remove("dark-theme");
-      darkModeBtn.innerHTML = "🌙 Dark";
+      darkModeBtn.innerHTML = "🌙";
       if (readerWrap.classList.contains("theme-night")) {
         setReaderTheme("paper");
       }
