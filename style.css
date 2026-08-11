@@ -499,11 +499,29 @@ body.dark-theme{
   padding:10px 20px;
   display:flex;
   align-items:center;
-  gap:14px;
-  flex-wrap:wrap;
+  position:relative;
   z-index:20;
 }
 #controls.disabled{ opacity:.35; pointer-events:none; }
+
+.controls-left,
+.controls-right{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex:1;
+  min-width:0;
+}
+.controls-right{
+  justify-content:flex-end;
+}
+.controls-center{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0;
+  margin:0 20px;
+}
 
 .transport{
   display:flex;
@@ -634,7 +652,6 @@ input[type=range]{ width:80px; }
   color:var(--brass-bright);
 }
 
-#spacer{ flex:1; }
 
 /* ========== Index Modal ========== */
 .modalBackdrop {
@@ -894,6 +911,16 @@ input[type=range]{ width:80px; }
     gap: 8px;
     justify-content: center;
     flex-wrap: nowrap;
+  }
+  .controls-left {
+    display: none !important;
+  }
+  .controls-center {
+    margin: 0;
+    gap: 6px;
+  }
+  .controls-right {
+    flex: 0;
   }
   .transport {
     gap: 5px;

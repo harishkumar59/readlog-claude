@@ -1,10 +1,16 @@
+## 🛑 License and Commercial Use
+
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](./LICENSE). It is free for personal, educational, and noncommercial use, and open to contributions — but commercial use is strictly prohibited.
+
+Full license: [LICENSE](./LICENSE) • [polyformproject.org/licenses/noncommercial/1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)
+
 <p align="center">
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5"/>
   <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3"/>
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"/>
 </p>
 
-<h1 align="center">📖 Readalong</h1>
+<h1 align="center">📖 Read alond</h1>
 
 <p align="center">
   <strong>Your books, read aloud.</strong><br/>
@@ -160,7 +166,7 @@ Contributions are welcome! Feel free to:
 
 ## 📄 License
 
-This project is open source. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](./LICENSE). Free for personal, educational, and noncommercial use — commercial use is not permitted. See the [LICENSE](./LICENSE) file for full terms.
 
 ---
 
