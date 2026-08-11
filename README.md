@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"/>
 </p>
 
-<h1 align="center">📖 Readalong</h1>
+<h1 align="center">📖 Read alond</h1>
 
 <p align="center">
   <strong>Your books, read aloud.</strong><br/>
