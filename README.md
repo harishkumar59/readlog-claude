@@ -1,8 +1,8 @@
 ## 🛑 License and Commercial Use
 
-This project is licensed under CC BY-NC-SA 4.0. It is free for personal use and open to contributions, but commercial use is strictly prohibited.
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](./LICENSE). It is free for personal, educational, and noncommercial use, and open to contributions — but commercial use is strictly prohibited.
 
-Full license: [LICENSE](./LICENSE) • [creativecommons.org/licenses/by-nc-sa/4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+Full license: [LICENSE](./LICENSE) • [polyformproject.org/licenses/noncommercial/1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)
 
 <p align="center">
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5"/>
